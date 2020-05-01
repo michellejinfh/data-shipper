@@ -56,7 +56,7 @@
 <!-- 		<property name="gigaSpace" ref="optGigaSpace"/> -->
     </bean>
     
-    <os-events:polling-container id="bpcShipperContainer" giga-space="optGigaSpace" concurrent-consumers="${bpcShipper.polling.consumer}" max-concurrent-consumers="${bpcShipper.polling.consumer}">
+    <os-events:polling-container id="bpcShipperContainer" giga-space="optGigaSpace" concurrent-consumers="1" max-concurrent-consumers="1">
 
         <os-events:receive-operation-handler>
             <bean class="org.openspaces.events.polling.receive.SingleTakeReceiveOperationHandler">
