@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:os-core="http://www.openspaces.org/schema/core" xmlns:os-jms="http://www.openspaces.org/schema/jms"
+	xmlns:os-events="http://www.openspaces.org/schema/events"
+	xmlns:os-remoting="http://www.openspaces.org/schema/remoting"
+	xmlns:os-sla="http://www.openspaces.org/schema/sla" xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+       http://www.openspaces.org/schema/core http://www.openspaces.org/schema/12.3/core/openspaces-core.xsd
+       http://www.openspaces.org/schema/events http://www.openspaces.org/schema/12.3/events/openspaces-events.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd
+       http://www.openspaces.org/schema/remoting http://www.openspaces.org/schema/12.3/remoting/openspaces-remoting.xsd">
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="ignoreResourceNotFound" value="true"/>
+        <property name="location" value="application.properties"/>
+    </bean>
+    
+    <!-- Enables the usage of @GigaSpaceContext annotation based injection. -->
+    <os-core:giga-space-context />
+
+    <!-- Enables Spring Annotation configuration -->
+    <context:annotation-config />
+
+    <!-- Enables using @Polling and @Notify annotations -->
+    <os-events:annotation-support />
+
+    <!-- Enables using @RemotingService as well as @ExecutorProxy (and others)
+        annotations -->
+    <os-remoting:annotation-support />
+
+    <!-- Enables using @PreBackup, @PostBackup and other annotations -->
+    <os-core:annotation-support />
+
+<!--     <tx:annotation-driven transaction-manager="transactionManager" /> -->
+
+<!--     <os-core:space id="optSpace" url="jini://*/*/Optimizer-space"/> -->
+    <os-core:space-proxy id="optSpace" name="Optimizer-space">
+        <os-core:properties>
+            <props>
+                <prop key="com.gs.jini_lus.groups">xap-14.5.0</prop>
+                <prop key="com.gs.jini_lus.locators">testmanager-xap-manager-hs:4174</prop>
+            </props>
+        </os-core:properties>
+    </os-core:space-proxy>
+
+    <os-core:giga-space id="optGigaSpace" space="optSpace"/>
+    
+<!--     <os-core:space id="ficSpace" url="jini://*/*/fic"/> -->
+<!--    <os-core:space id="ficSpace" url="${fic.space.url}" lookup-timeout="50000" />   -->
+<!--    <os-core:giga-space id="ficGigaSpace" space="ficSpace"/>-->
+    
+    <bean id="dataShipper" class="com.aa.rm.optimizer.cloudpoc.DataShipper">
+		<property name="gigaSpace" ref="optGigaSpace"/>
+<!-- 		<property name="gigaSpace" ref="optGigaSpace"/> -->
+    </bean>
+    
+    <os-events:polling-container id="bpcShipperContainer" giga-space="optGigaSpace" concurrent-consumers="${bpcShipper.polling.consumer}" max-concurrent-consumers="${bpcShipper.polling.consumer}">
+
+        <os-events:receive-operation-handler>
+            <bean class="org.openspaces.events.polling.receive.SingleTakeReceiveOperationHandler">
+                <property name="nonBlocking" value="true"/>
+            </bean>
+        </os-events:receive-operation-handler>
+
+		<os-core:sql-query where="status = 'READY'" class="com.aa.rm.optimizer.common.model.BPCData"/>
+
+        <os-events:listener>
+            <os-events:annotation-adapter>
+                <os-events:delegate ref="bpcShipper"/>
+            </os-events:annotation-adapter>
+        </os-events:listener>
+        
+    </os-events:polling-container>
+    
+</beans>
