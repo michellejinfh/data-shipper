@@ -68,7 +68,7 @@
 
         <os-events:listener>
             <os-events:annotation-adapter>
-                <os-events:delegate ref="bpcShipper"/>
+                <os-events:delegate ref="dataShipper"/>
             </os-events:annotation-adapter>
         </os-events:listener>
         
